@@ -28,9 +28,9 @@ const C={'Sanden Vikas':'VA550-12031 VA552-10641 VA550-12530 VA550-12562 VA552-1
 const K='eolt_fpa_v1';let S;
 try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 if(!S){S={pw:'1234',who:[],parts:[],rec:[],aud:[]};for(const c in C)C[c].split(' ').forEach(p=>S.parts.push({no:p,cust:c,n:c=='TACO Air'?6:1,st:'pending',smp:[],ed:''}))}
-const SHEET_URL='PASTE_EXEC_URL_HERE';if(/^https/.test(SHEET_URL))S.url=SHEET_URL;
+let LD=0;const SHEET_URL='https://script.google.com/macros/s/AKfycbyMzUoxd0XSh5LXx3NIHhY8DUlIs-CSAprWkjgUnqBuNuFc5Yo_0AoxZG0BHS7J0u6kfg/exec';if(/^https/.test(SHEET_URL))S.url=SHEET_URL;
 const GS=window.google&&google.script&&google.script.run;
-const post=o=>{if(GS)GS.withFailureHandler(()=>{U.msg=' (Sheet sync fail)'}).appSave(JSON.stringify(o));else if(S.url)fetch(S.url,{method:'POST',body:JSON.stringify(o)}).catch(()=>{U.msg=' (Sheet sync fail)'})};
+const post=o=>{if(o.state&&!LD&&(GS||S.url))return;if(GS)GS.withFailureHandler(()=>{U.msg=' (Sheet sync fail)'}).appSave(JSON.stringify(o));else if(S.url)fetch(S.url,{method:'POST',body:JSON.stringify(o)}).catch(()=>{U.msg=' (Sheet sync fail)'})};
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}post({state:{pw:S.pw,who:S.who,parts:S.parts,aud:S.aud}})};
 const U={tab:'f',who:'',cust:'',part:'',qrs:[],res:null,admin:false,msg:''};let on=false,last=['',0];
 const $=id=>document.getElementById(id),E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -60,7 +60,7 @@ if(a=='iw'){const n=prompt('Inspector ka naam');if(n){S.who.push(n.trim());S.aud
 if(a=='ap'){const c=prompt('Customer ('+Object.keys(C).join(', ')+' ya naya)'),no=prompt('Part number'),n=+prompt('Label pe kitne QR? (1 ya 6)','1');if(c&&no){S.parts.push({no:no.trim(),cust:c.trim(),n:n||1,st:'pending',smp:[],ed:U.admin});S.aud.push([now(),U.admin,'ADD PART',no])}}
 if(a=='ep'&&p){const no=prompt('Part number',p.no),n=+prompt('QR count',p.n),r=prompt('Edit ka reason');if(no&&r){S.aud.push([now(),U.admin,'EDIT '+p.no+'->'+no+' qr'+p.n+'->'+n,r]);p.no=no.trim();p.n=n||1;p.st='reverify';p.smp=[];p.ed=U.admin;U.part=p.no}}
 if(a=='pw'){const n=prompt('Naya password');if(n)S.pw=n}
-if(a=='url'){const n=prompt('Google Apps Script web app URL (/exec)',S.url||'');if(n!==null)S.url=n.trim()}
+if(a=='url'){const n=prompt('Google Apps Script web app URL (/exec)',S.url||'');if(n!==null){S.url=n.trim();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}location.reload();return}}
 save();draw()}
 function gate(){const w=prompt('Password');if(w===S.pw){const n=prompt('Aap kaun ho? (QA Head / QA Engineer naam)');if(n){U.admin=n;draw()}}else if(w!==null)alert('Galat password')}
 function draw(){const m=$('m'),ps=S.parts.filter(p=>!U.cust||p.cust==U.cust),p=P();
@@ -85,6 +85,6 @@ m.innerHTML=h}
 function fr(){const f=U.df?Date.parse(U.df):0,t=U.dt?Date.parse(U.dt)+864e5:1e15;return S.rec.filter(r=>(r.ts||0)>=f&&(r.ts||0)<t).slice().reverse()}
 function csv(){const t=['Time,Naam,Customer,Part,Type,Result,Karan'].concat(fr().reverse().map(r=>[r.t,r.who,r.cust,r.part,r.mode,r.res,r.why].map(v=>'"'+String(v).replace(/"/g,'')+'"').join(','))).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv'}));a.download='FPA_records.csv';a.click()}
 draw();
-const ld=d=>{if(d.state)Object.assign(S,d.state);S.rec=d.rec.map(r=>({ts:Date.parse(r[0]),t:new Date(r[0]).toLocaleString('en-GB'),who:r[1],cust:r[2],part:r[3],mode:r[4],res:r[5],why:r[6],qr:r[7]}));draw()};
+const ld=d=>{LD=1;if(d.state)Object.assign(S,d.state);S.rec=d.rec.map(r=>({ts:Date.parse(r[0]),t:new Date(r[0]).toLocaleString('en-GB'),who:r[1],cust:r[2],part:r[3],mode:r[4],res:r[5],why:r[6],qr:r[7]}));draw()};
 if(GS)GS.withSuccessHandler(s=>ld(JSON.parse(s))).appLoad();else if(S.url)fetch(S.url+'?d=1').then(r=>r.json()).then(ld).catch(()=>{});
 </script></body></html>
